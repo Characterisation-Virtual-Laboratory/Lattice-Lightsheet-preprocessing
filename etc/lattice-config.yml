@@ -1,0 +1,21 @@
+---
+comment: "This is a sample config file"
+
+comment: "A trailing / is required when specifying paths"
+remote_input_dir:   /scratch/PROJECT_ID/WinSCP/windows_input/
+remote_output_dir:  /scratch/PROJECT_ID/WinSCP/windows_output/
+massive_input_dir:  /scratch/PROJECT_ID/WinSCP/MASSIVE_input/
+massive_output_dir: /scratch/PROJECT_ID/WinSCP/MASSIVE_output/
+
+submitted:  /projects/PROJECT_ID/scripts/etc/submitted.yml
+srun_path:  /opt/slurm-19.05.4/bin/srun
+executable: /projects/PROJECT_ID/HPCDeskewBuild/HPCDeskew
+
+timeout: 5
+delay: 3
+
+log-level: logging.DEBUG
+log-files:
+    watch: /projects/PROJECT_ID/scripts/var/log/watchFolder.log
+
+

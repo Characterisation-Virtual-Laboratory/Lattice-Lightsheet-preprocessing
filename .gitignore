@@ -1,0 +1,8 @@
+
+.DS_Store
+.idea
+var/log/watchFolder.log
+watchfolder
+etc/lattice-config-testing.yml
+etc/submitted.yml
+lattice-watchFolder-setup.txt
