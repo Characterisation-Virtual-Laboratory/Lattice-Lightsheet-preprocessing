@@ -88,3 +88,9 @@ with the process writing output to the "massive_output_dir". The script will mon
 and copy the processed files to "remote_output_dir"
 4. When the HPC starts processing the job, files will be processed, and WinSCP will copy them across to Windows. On the 
 Windows machine, you should see a flow of files in and out of the machine.   
+
+## lattice-watchFolder.py command line arguments
+- execute: this must be set otherwise the "executable" as defined in the lattice-config.yml file will not run.
+- reset:   when set, the contents of the configured folders will be deleted. ("remote_input_dir", "remote_output_dir", 
+"massive_input_dir", "massive_output_dir") The file submitted.yml will be removed. This ensures a clean run. No actual
+processing takes place, just the cleanup.
