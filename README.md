@@ -72,7 +72,7 @@ environment and any modules required for processing the data. Then it starts the
 
 On your Windows machine, setup a file transfer tool. We suggest using WinSCP as it
 can monitor local and remote folders for new files. For details on how to do 
-this refer to: add link to doco on docs.massive (need to write it up)
+this refer to: https://docs.massive.org.au/M3/transferring-files.html#winscp-windows
 
 1. **PROCESSED files from HPC** 
     Start WinSCP to keep a local folder up to date. This should be linked to the "remote_output_dir"
