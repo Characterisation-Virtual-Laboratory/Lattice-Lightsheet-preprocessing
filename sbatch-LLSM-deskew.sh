@@ -24,8 +24,10 @@ module load arrayfire
 module load cuda/10.1
 module load qt/5.7.1-gcc5
 
+RESET=$1
+
 #Activate the virtual environment
 source /projects/PROJECT_ID/virtualenv/watchFolder/bin/activate
 
 cd /projects/PROJECT_ID/scripts/
-python lattice-watchFolder.py --config etc/lattice-config.yml --execute --reset
+python lattice-watchFolder.py --config etc/lattice-config.yml --execute $RESET

@@ -267,7 +267,8 @@ def main():
     logger.addHandler(fh)
 
     watch = WatchFolder(config, args.execute, args.reset)
-    watch.main()
+    if not args.reset:
+        watch.main()
 
 
 if __name__ == "__main__":
