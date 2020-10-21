@@ -50,9 +50,12 @@ etc/lattice-config.yml
 - submitted:  Path to submitted.yml. This file is used to track files submitted for processing. If the process is 
             restarted, the files listed in submitted.yml are not reprocessed. This file will be created if it does
             not exist.
-- srun_path:  Path to 'srun' for submitting the file for processing
-- executable: Path to the executable that will process the file. The executable is expected to write output to 
-            the "massive_output_dir"
+
+- command: A Python list containing the path to srun followed by the executable and any required arguments. The argument 
+"file" must be supplied as the program will substitute this with the file path. The argument "massive_output_dir" must 
+be supplied as the program will substitute this the value defined above. The executable must be capable of outputting a 
+file to a destination path. This method allow a fully configurable command for processing. Please refer to 
+lattice-config.yml for an example.
 
 - timeout:    Controls the main loop. e.g. 5. pause the main loop for 5 seconds before searching for more files.
 - delay: 3    Used to determine, when to process the last file. When "delay X timeout" in seconds is reached, the

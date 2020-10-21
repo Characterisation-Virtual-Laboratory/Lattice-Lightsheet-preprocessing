@@ -65,19 +65,16 @@ class WatchFolder:
         # if not os.path.exists(self.config""):
 
     def submit_job(self, file):
-        # Use this for testing
-        # cmd = [
-        #     "cp",
-        #     file,
-        #     self.config["massive_output_dir"],
-        # ]
+        # Obtaining the command from config, copying the value.
+        cmd = self.config["command"].copy()
 
-        cmd = [
-            self.config["srun_path"],
-            self.config["executable"],
-            file,
-            self.config["massive_output_dir"],
-        ]
+        # Checking command variables for 'file', then replace 'file' with the variable contents. i.e. the file path
+        # replace massive_output_dir with the config value
+        for x in range(len(cmd)):
+            if cmd[x] == 'file':
+                cmd[x] = vars().get(cmd[x])
+            if cmd[x] == 'massive_output_dir':
+                cmd[x] = self.config["massive_output_dir"]
 
         if self.execute is True:
             p = subprocess.Popen(

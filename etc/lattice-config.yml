@@ -1,15 +1,20 @@
 ---
-comment: "This is a sample config file"
+comment1: "This is a sample config file"
 
-comment: "A trailing / is required when specifying paths"
+comment2: "A trailing / is required when specifying paths"
 remote_input_dir:   /scratch/PROJECT_ID/WinSCP/windows_input/
 remote_output_dir:  /scratch/PROJECT_ID/WinSCP/windows_output/
 massive_input_dir:  /scratch/PROJECT_ID/WinSCP/MASSIVE_input/
 massive_output_dir: /scratch/PROJECT_ID/WinSCP/MASSIVE_output/
 
 submitted:  /projects/PROJECT_ID/scripts/etc/submitted.yml
-srun_path:  /opt/slurm-19.05.4/bin/srun
-executable: /projects/PROJECT_ID/HPCDeskewBuild/HPCDeskew
+
+comment3: "The command must contain 'file' which is replaced with the file path at runtime for processing."
+comment4: "The command must contain 'massive_output_dir' which is replaced with the configured value at runtime."
+command: [ "/opt/slurm-19.05.4/bin/srun",
+           "/projects/PROJECT_ID/HPCDeskewBuild/HPCDeskew",
+           "file",
+           "massive_output_dir"]
 
 timeout: 5
 delay: 3
