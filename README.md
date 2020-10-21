@@ -53,7 +53,7 @@ etc/lattice-config.yml
 
 - command: A Python list containing the path to srun followed by the executable and any required arguments. The argument 
 "file" must be supplied as the program will substitute this with the file path. The argument "massive_output_dir" must 
-be supplied as the program will substitute this the value defined above. The executable must be capable of outputting a 
+be supplied as the program will substitute this with the value defined above. The executable must be capable of outputting a 
 file to a destination path. This method allow a fully configurable command for processing. Please refer to 
 lattice-config.yml for an example.
 
