@@ -2,6 +2,7 @@ import argparse
 from dateutil.tz import *
 import errno
 import logging
+import logging.handlers
 import os
 import shutil
 import subprocess
@@ -258,7 +259,8 @@ def main():
     logger = logging.getLogger("lattice-watchFolder")
     logger.setLevel(logging_dict[config["log-level"]])
 
-    fh = logging.FileHandler(config["log-files"]["watch"])
+    # fh = logging.FileHandler(config["log-files"]["watch"])
+    fh = logging.handlers.RotatingFileHandler(config["log-files"]["watch"], maxBytes=10*1024*1024, backupCount=5)
     fh.setLevel(logging_dict[config["log-level"]])
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s:%(process)s: %(message)s"
