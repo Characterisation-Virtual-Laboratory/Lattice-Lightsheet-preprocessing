@@ -1,36 +1,36 @@
-# Lattice-Lightsheet-preprocessing
+# Lattice-Lightsheet-processing
 
 The Lattice Lightsheet instrument captures data on a Windows based machine. To
 take advantage of the processing power in a HPC (High Performance Computing) 
-environment the lattice-watchFolder.py script has been created to enable live 
+environment the lattice-processing.py script has been created to enable 
 processing of raw data.
 
 Mounting a windows file system on Unix has a few challenges. While this can be achieved, 
-determining when Windows has finished creating a file, is difficult for Unix. This 
-script avoids the need to check file locks.
+determining when Windows has finished creating a file, is difficult for Unix. This script
+avoids the need to check file locks.
 
 Since file locking can be problematic between Windows and UNIX, the 
-lattice-Watchfolder.py script has been built with the following assumptions:
- - files are written sequentially from the instrument.
- - the first file is not processed, (how do we know it is complete? )
- - when a second file is written, the first file is processed by the script, and so on.
- - a configurable time delay is used by the script, to determine when to 
- process the last file.
+lattice-processing.py script has been built with the following assumptions:
+ - expects the folder path to end with "emailAddress/YYYYMMDD/experimentID"
+ - checks for the existence of the 'processing_file' in the experimentID folder as
+   defined in the config.yml, if the file is detected, processing continues.
+ - the 'processing_file' is a jinja2 template, each line containing the command to run and the parameters
+   for substitution matching those as defined "processing_output_folders" in config.yml
 
 ## Installation on the HPC
 - create a virtual environment
 ```
-    python3 -m venv ~/virtualenv/lattice-watchFolder
+    python3 -m venv ~/virtualenv/lattice-process
 ```
 
 - activate the virtual environment
 ```
-    source ~/virtualenv/lattice-watchFolder/bin/activate
+    source ~/virtualenv/lattice-process/bin/activate
 ```
 
 - install Python dependencies
 ```
-    pip install python-dateutil pyyml
+    pip install python-dateutil pyyml jinja2
 ```
 
 - Clone the repository
@@ -42,25 +42,12 @@ lattice-Watchfolder.py script has been built with the following assumptions:
 ### Configuration file  
 etc/lattice-config.yml
 
-- remote_input_dir:   Path to local folder that is receiving files from Windows.
-- remote_output_dir:  Path to local folder with files that have completed processing. e.g. SCP back to Windows.
 - massive_input_dir:  Path to local folder containing the files for processing. 
 - massive_output_dir: Path to local folder containing the processed folder.
 
-- submitted:  Path to submitted.yml. This file is used to track files submitted for processing. If the process is 
-            restarted, the files listed in submitted.yml are not reprocessed. This file will be created if it does
-            not exist.
-
-- command: A Python list containing the path to srun followed by the executable and any required arguments. The argument 
-"file" must be supplied as the program will substitute this with the file path. The argument "massive_output_dir" must 
-be supplied as the program will substitute this with the value defined above. The executable must be capable of outputting a 
-file to a destination path. This method allow a fully configurable command for processing. Please refer to 
-lattice-config.yml for an example.
-
-- timeout:    Controls the main loop. e.g. 5. pause the main loop for 5 seconds before searching for more files.
-- delay: 3    Used to determine, when to process the last file. When "delay X timeout" in seconds is reached, the
-            last file will be submitted for processing. This value will require adjusting depending on the
-            speed of your connection to upload files to the HPC. 
+- processing_file: path to the jinaj2 template containing commands for execution
+- processing_output_folders: use to create output folders for processed data, but also to substitute values
+  in the processing_file
 
 - log-level: Possible values are: logging.DEBUG, logging.INFO, logging.ERROR, logging.WARNING
 - log-files:
@@ -68,7 +55,7 @@ lattice-config.yml for an example.
 
 ### Configuring the job - sbatch
 
-The file "sbatch-LLSM-deskew.sh" is a sample for running the process. The script activates the python virtual
+The file "sbatch-LLSM.sh" is a sample for running the process. The script activates the python virtual
 environment and any modules required for processing the data. Then it starts the lattice-Watchfolder process.
 
 ## Running the workflow
