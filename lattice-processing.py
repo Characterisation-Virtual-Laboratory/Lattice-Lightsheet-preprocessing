@@ -4,7 +4,7 @@ from jinja2 import Environment, FileSystemLoader
 import logging
 import logging.handlers
 import os
-import shutil
+from shutil import copytree, Error
 import subprocess
 import sys
 import yaml
@@ -38,17 +38,22 @@ class WatchFolder:
         text = template_text.render(**full_paths)
 
         for line in text.splitlines():
-            if self.execute is True:
-                p = subprocess.Popen(
-                    args=line, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
+            # split line to create a list of arguments to process the command
+            cmd = line.split()
+            p = subprocess.Popen(
+                args=cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
 
-                for stdout_line in iter(p.stdout.readline, b""):
-                    self.logger.info("Stdout: {}".format(stdout_line.decode("utf-8")))
-                for stderr_line in iter(p.stderr.readline, b""):
-                    self.logger.warning("Stderr: {}".format(stderr_line.decode("utf-8")))
-            else:
-                self.logger.info("Job: {}".format(line))
+            for stdout_line in iter(p.stdout.readline, b""):
+                self.logger.info("Stdout: {}".format(stdout_line.decode("utf-8")))
+                with open(path + '/output.txt', 'a') as output_file:
+                    output_file.write('The following output was generated:\n\t command: {}\n\t output: {}\n'.
+                                      format(line, stdout_line.decode("utf-8")))
+            for stderr_line in iter(p.stderr.readline, b""):
+                self.logger.warning("Stderr: {}".format(stderr_line.decode("utf-8")))
+                with open(path + '/errors.txt', 'a') as error_file:
+                    error_file.write('The following error was generated:\n\t command: {} \n\t error: {}\n'.
+                                     format(line, stderr_line.decode("utf-8")))
 
     def main(self):
         self.logger.info("Processing folder: {}".format(self.input))
@@ -60,7 +65,9 @@ class WatchFolder:
         if os.path.exists(self.input + '/' + self.config["processing_file"]):
             processing_file_exists = True
         else:
-            self.logger.error("The processing file: {} does not exist. This is required to indicate data collection is complete.".format(self.config["processing_file"]))
+            self.logger.error(
+                "The processing file: {} does not exist. This is required to indicate data collection is complete.".format(
+                    self.config["processing_file"]))
 
         if processing_file_exists:
             # Obtaining the emailAddress, Date, dataset from the folder structure
@@ -79,22 +86,38 @@ class WatchFolder:
                     new_folder = self.config["massive_output_dir"] + 'rawdata/' + sub_structure + '/' + \
                                  self.config["processing_output_folders"][folder]
                     self.logger.debug("Creating output folder: {}".format(new_folder))
-                    try:
-                        os.makedirs(new_folder, exist_ok=True)
-                    except FileExistsError:
-                        self.logger.debug("Output folder exists: {}".format(self.config["processing_output_folders"][folder]))
+                    if self.execute is True:
+                        try:
+                            os.makedirs(new_folder, exist_ok=False)
+                        except FileExistsError:
+                            self.logger.debug(
+                                "Output folder exists: {}".format(self.config["processing_output_folders"][folder]))
+                    else:
+                        self.logger.info("Dry run: creating folder: {}".format(new_folder))
 
-            # Moving input files to new location
-            self.logger.debug("Moving rawdata to permanent location")
-            try:
-                shutil.move(self.config["massive_input_dir"] + sub_structure + '/',
-                            self.config["massive_output_dir"] + 'rawdata/'+ sub_structure + "/" +
-                            self.config["processing_output_folders"]['rawdata'])
-            except shutil.Error as error:
-                self.logger.error("Error moving files: ", error)
+            # copying input files to new location
+            self.logger.debug("Copying rawdata to permanent location")
+            if self.execute is True:
+                try:
+                    copytree(self.config["massive_input_dir"] + sub_structure,
+                             self.config["massive_output_dir"] + 'rawdata/' + sub_structure + "/" +
+                             self.config["processing_output_folders"]['rawdata'])
+                except Error as error:
+                    self.logger.error("Error copying files: {}".format(error))
+                except FileExistsError as error:
+                    self.logger.error("Error copying files: {}".format(error))
+            else:
+                self.logger.info("Dry run: copying files to: {}".format(self.config["massive_output_dir"] + 'rawdata/'
+                                                                        + sub_structure + "/"
+                                                                        + self.config["processing_output_folders"][
+                                                                            'rawdata']))
 
             # Process the data
-            self.submit_job(self.config["massive_output_dir"] + 'rawdata/'+ sub_structure)
+            if self.execute is True:
+                self.submit_job(self.config["massive_output_dir"] + 'rawdata/' + sub_structure)
+            else:
+                self.logger.info("Dry run: job not submitted")
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -125,7 +148,7 @@ def main():
     logger = logging.getLogger("lattice-watchFolder")
     logger.setLevel(logging_dict[config["log-level"]])
 
-    fh = logging.handlers.RotatingFileHandler(config["log-files"]["watch"], maxBytes=10*1024*1024, backupCount=5)
+    fh = logging.handlers.RotatingFileHandler(config["log-files"]["watch"], maxBytes=10 * 1024 * 1024, backupCount=5)
     fh.setLevel(logging_dict[config["log-level"]])
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s:%(process)s: %(message)s"
