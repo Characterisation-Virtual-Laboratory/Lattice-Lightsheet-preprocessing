@@ -4,6 +4,7 @@ from jinja2 import Environment, FileSystemLoader
 import logging
 import logging.handlers
 import os
+import shlex
 from shutil import copytree, Error
 import subprocess
 import sys
@@ -39,7 +40,8 @@ class WatchFolder:
 
         for line in text.splitlines():
             # split line to create a list of arguments to process the command
-            cmd = line.split()
+            # using shlex as it wraps the split strings in "". Ensures paths with spaces are correctly passed.
+            cmd = shlex.split(line)
             p = subprocess.Popen(
                 args=cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
@@ -72,6 +74,10 @@ class WatchFolder:
         if processing_file_exists:
             # Obtaining the emailAddress, Date, dataset from the folder structure
             # e.g. /project/ProjectID/massive_input/emailAddress/YYYYMMDD/experimentID
+            # If the  path ends with '/', remove the trailing '/'
+            if self.input.endswith('/'):
+                self.input = self.input.rstrip('/')
+
             folders = self.input.rsplit("/", 3)
             email_address = folders[1]
             date_folder = folders[2]
