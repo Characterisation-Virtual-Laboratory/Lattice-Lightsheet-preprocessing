@@ -1,3 +1,4 @@
+wait_for_files "FileCountGoesHere"
 python Deskew.py "{{ rawdata }}" "{{ deskewed_output }}" YourParametersWillGoHere
 python Decon.py "{{ deskewed_output }}" "{{ deconvolved_output }}" "{{ rawdata }}/psf"  YourParametersWillGoHere
 python PhotoBleachCorrect_Multiprocessing.py "{{ deskewed_output }}" "{{ photobleach_output }}" YourParametersWillGoHere

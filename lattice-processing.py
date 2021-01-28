@@ -8,6 +8,7 @@ import shlex
 from shutil import copytree, Error
 import subprocess
 import sys
+import time
 import yaml
 
 
@@ -25,50 +26,100 @@ class WatchFolder:
         self.logger = logging.getLogger("lattice-watchFolder.WatchFolder")
         self.logger.debug("creating an instance of WatchFolder")
 
-    def submit_job(self, path):
-
+    def prepare_for_processing(self, sub_structure, output_dir):
+        # Parse the processing file.
         # prepare environment to read Jinja templates
-        env = Environment(loader=FileSystemLoader(path + "/" + self.config["processing_output_folders"]["rawdata"]))
+        env = Environment(loader=FileSystemLoader(self.input))
         # obtain the text and html template
         template_text = env.get_template(self.config["processing_file"])
 
         full_paths = {}
         for folder in self.config["processing_output_folders"]:
-            full_paths[folder] = path + "/" + self.config["processing_output_folders"][folder]
+            full_paths[folder] = output_dir + "/" + self.config["processing_output_folders"][folder]
 
-        text = template_text.render(**full_paths)
+        jobs = template_text.render(**full_paths)
 
-        for line in text.splitlines():
-            # split line to create a list of arguments to process the command
-            # using shlex as it wraps the split strings in "". Ensures paths with spaces are correctly passed.
-            cmd = shlex.split(line)
-            p = subprocess.Popen(
-                args=cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
+        # wait_for_files to be fully copied, then prepare folders for archiving.
+        job = jobs.splitlines()[0]
+        if job.startswith("wait_for_files"):
+            cmd = shlex.split(job)
+            total_files = int(cmd[1])
+            match = False
+            while match is False:
+                total = sum([len(files) for r, d, files in os.walk(self.input)])
+                if total == total_files:
+                    match = True
+                else:
+                    time.sleep(30)
+            self.logger.info("Finished waiting for files.")
 
-            for stdout_line in iter(p.stdout.readline, b""):
-                self.logger.info("Stdout: {}".format(stdout_line.decode("utf-8")))
-                with open(path + '/output.txt', 'a') as output_file:
-                    output_file.write('The following output was generated:\n\t command: {}\n\t output: {}\n'.
-                                      format(line, stdout_line.decode("utf-8")))
-            for stderr_line in iter(p.stderr.readline, b""):
-                self.logger.warning("Stderr: {}".format(stderr_line.decode("utf-8")))
-                with open(path + '/errors.txt', 'a') as error_file:
-                    error_file.write('The following error was generated:\n\t command: {} \n\t error: {}\n'.
-                                     format(line, stderr_line.decode("utf-8")))
+        # Create output folders
+        for folder in self.config["processing_output_folders"]:
+            # Don't create the rawdata folder, as created by copy below.
+            if not folder == "rawdata":
+                new_folder = self.config["massive_output_dir"] + 'rawdata/' + sub_structure + '/' + \
+                             self.config["processing_output_folders"][folder]
+                self.logger.debug("Creating output folder: {}".format(new_folder))
+                if self.execute is True:
+                    try:
+                        os.makedirs(new_folder, exist_ok=False)
+                    except FileExistsError:
+                        self.logger.debug(
+                            "Output folder exists: {}".format(self.config["processing_output_folders"][folder]))
+                else:
+                    self.logger.info("Dry run: creating folder: {}".format(new_folder))
+
+        # copying input files to new location for archiving and processing.
+        self.logger.debug("Copying rawdata to permanent location")
+        if self.execute is True:
+            try:
+                copytree(self.config["massive_input_dir"] + sub_structure,
+                         self.config["massive_output_dir"] + 'rawdata/' + sub_structure + "/" +
+                         self.config["processing_output_folders"]['rawdata'])
+            except Error as error:
+                self.logger.error("Error copying files: {}".format(error))
+            except FileExistsError as error:
+                self.logger.error("Error copying files: {}".format(error))
+        else:
+            self.logger.info("Dry run: copying files to: {}".format(self.config["massive_output_dir"] + 'rawdata/'
+                                                                    + sub_structure + "/"
+                                                                    + self.config["processing_output_folders"][
+                                                                        'rawdata']))
+        return jobs
+
+    def submit_job(self, jobs, path):
+
+        for job in jobs.splitlines():
+            if not job.startswith("wait_for_files"):
+                # split line to create a list of arguments to process the command
+                # using shlex as it wraps the split strings in "". Ensures paths with spaces are correctly passed.
+                cmd = shlex.split(job)
+
+                p = subprocess.Popen(
+                    args=cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+
+                for stdout_line in iter(p.stdout.readline, b""):
+                    self.logger.info("Stdout: {}".format(stdout_line.decode("utf-8")))
+                    with open(path + '/output.txt', 'a') as output_file:
+                        output_file.write('The following output was generated:\n\t command: {}\n\t output: {}\n'.
+                                          format(job, stdout_line.decode("utf-8")))
+                for stderr_line in iter(p.stderr.readline, b""):
+                    self.logger.warning("Stderr: {}".format(stderr_line.decode("utf-8")))
+                    with open(path + '/errors.txt', 'a') as error_file:
+                        error_file.write('The following error was generated:\n\t command: {} \n\t error: {}\n'.
+                                         format(job, stderr_line.decode("utf-8")))
 
     def main(self):
         self.logger.info("Processing folder: {}".format(self.input))
 
         # Check if the processing file exists
-        # Existence confirms, no more data for this experiment_id, run processing
         processing_file_exists = False
-
         if os.path.exists(self.input + '/' + self.config["processing_file"]):
             processing_file_exists = True
         else:
             self.logger.error(
-                "The processing file: {} does not exist. This is required to indicate data collection is complete.".format(
+                "The processing file: {} does not exist. This is required to commence processing.".format(
                     self.config["processing_file"]))
 
         if processing_file_exists:
@@ -85,42 +136,10 @@ class WatchFolder:
 
             sub_structure = email_address + "/" + date_folder + "/" + experiment_id
 
-            # Create output folders
-            for folder in self.config["processing_output_folders"]:
-                # Don't create the rawdata folder, as created by move below.
-                if not folder == "rawdata":
-                    new_folder = self.config["massive_output_dir"] + 'rawdata/' + sub_structure + '/' + \
-                                 self.config["processing_output_folders"][folder]
-                    self.logger.debug("Creating output folder: {}".format(new_folder))
-                    if self.execute is True:
-                        try:
-                            os.makedirs(new_folder, exist_ok=False)
-                        except FileExistsError:
-                            self.logger.debug(
-                                "Output folder exists: {}".format(self.config["processing_output_folders"][folder]))
-                    else:
-                        self.logger.info("Dry run: creating folder: {}".format(new_folder))
-
-            # copying input files to new location
-            self.logger.debug("Copying rawdata to permanent location")
-            if self.execute is True:
-                try:
-                    copytree(self.config["massive_input_dir"] + sub_structure,
-                             self.config["massive_output_dir"] + 'rawdata/' + sub_structure + "/" +
-                             self.config["processing_output_folders"]['rawdata'])
-                except Error as error:
-                    self.logger.error("Error copying files: {}".format(error))
-                except FileExistsError as error:
-                    self.logger.error("Error copying files: {}".format(error))
-            else:
-                self.logger.info("Dry run: copying files to: {}".format(self.config["massive_output_dir"] + 'rawdata/'
-                                                                        + sub_structure + "/"
-                                                                        + self.config["processing_output_folders"][
-                                                                            'rawdata']))
-
             # Process the data
             if self.execute is True:
-                self.submit_job(self.config["massive_output_dir"] + 'rawdata/' + sub_structure)
+                jobs = self.prepare_for_processing(sub_structure, self.config["massive_output_dir"] + 'rawdata/' + sub_structure)
+                self.submit_job(jobs ,self.config["massive_output_dir"] + 'rawdata/' + sub_structure)
             else:
                 self.logger.info("Dry run: job not submitted")
 
