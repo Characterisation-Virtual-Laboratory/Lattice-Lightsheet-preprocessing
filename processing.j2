@@ -1,3 +1,3 @@
-deskew {{ rawdata }}  {{ deskewed_output }} YourParametersWillGoHere
-deconvolution {{ deskewed_output }} {{ deconvolved_output }} YourParametersWillGoHere
-photoBleachCorrection {{ deskewed_output }} {{ photobleach_output }} YourParametersWillGoHere
+python Deskew.py "{{ rawdata }}" "{{ deskewed_output }}" YourParametersWillGoHere
+python Decon.py "{{ deskewed_output }}" "{{ deconvolved_output }}" "{{ rawdata }}/psf"  YourParametersWillGoHere
+python PhotoBleachCorrect_Multiprocessing.py "{{ deskewed_output }}" "{{ photobleach_output }}" YourParametersWillGoHere
