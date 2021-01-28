@@ -3,13 +3,12 @@
 #SBATCH --account=ACCOUNT_ID
 #SBATCH --time=00:30:00
 #SBATCH --nodes=1
-#SBATCH --ntasks=1
+#SBATCH --ntasks=10
 #SBATCH --cpus-per-task=1
 #SBATCH --gres=gpu:K80:1
 #SBATCH --partition=m3e
-#SBATCH --mem=20GB
+#SBATCH --mem=40GB
 # To receive an email when job completes or fails
-#SBATCH --mail-user=firstname.lastname@monash.edu
 #SBATCH --mail-type=END
 #SBATCH --mail-type=FAIL
 
@@ -17,17 +16,18 @@
 #SBATCH --output=/projects/PROJECT/scripts/var/job-output/MyJob-%j.out
 
 # Set the file for error log (stderr)
-#SBATCH --error=/projects/PROJECT/scripts/var/job-output/MyJob-%j.err
+#SBATCH --error=/projects/PROJECT/scripts/var/job-output/MyJob-%j.out
+
+INPUT_FOLDER=$@
 
 #Load the required modules for processing the instrument data
-module load arrayfire
-module load cuda/10.1
-module load qt/5.7.1-gcc5
+module load cuda/11.0
 
-INPUT_FOLDER=$1
+#Activate the virtual environment - miniconda3
+source /projects/PROJECT_ID/processing/miniconda3/bin/activate ""
 
-#Activate the virtual environment
-source /projects/PROJECT_ID/virtualenv/watchFolder/bin/activate
+#Activate the conda environment
+conda activate decon_env
 
-cd /projects/PROJECT_ID/scripts/
-python lattice-watchFolder.py --config etc/lattice-config.yml --execute --input $INPUT_FOLDER
+cd /projects/PROJECT_ID/processing/lightsheet-processing/
+python lattice-watchFolder.py --config etc/lattice-config.yml --execute --input "$INPUT_FOLDER"
