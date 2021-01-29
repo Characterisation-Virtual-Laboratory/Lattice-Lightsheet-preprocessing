@@ -8,7 +8,7 @@ import argparse
 
 """
 need to install https://github.com/tlambert03/pycudadecon
-need to install tifffile, cupy numpy
+need to install tifffile, cupy, numpy
 """
 
 def deskew_noise_padding(input_file, out_dir, angle, dz, pixel_size):

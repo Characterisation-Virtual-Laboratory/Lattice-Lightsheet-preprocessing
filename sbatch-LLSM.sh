@@ -13,10 +13,10 @@
 #SBATCH --mail-type=FAIL
 
 # Set the file for output (stdout)
-#SBATCH --output=/projects/PROJECT/scripts/var/job-output/MyJob-%j.out
+#SBATCH --output=/projects/PROJECT/job-output/MyJob-%j.out
 
 # Set the file for error log (stderr)
-#SBATCH --error=/projects/PROJECT/scripts/var/job-output/MyJob-%j.out
+#SBATCH --error=/projects/PROJECT/job-output/MyJob-%j.out
 
 INPUT_FOLDER=$@
 
@@ -29,5 +29,5 @@ source /projects/PROJECT_ID/processing/miniconda3/bin/activate ""
 #Activate the conda environment
 conda activate decon_env
 
-cd /projects/PROJECT_ID/processing/lightsheet-processing/
-python lattice-watchFolder.py --config etc/lattice-config.yml --execute --input "$INPUT_FOLDER"
+cd /projects/PROJECT_ID/processing/Lattice-Lightsheet-preprocessing/
+python lattice-processing.py --config etc/lattice-config.yml --execute --input "$INPUT_FOLDER"
