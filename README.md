@@ -5,6 +5,10 @@ take advantage of the processing power in a HPC (High Performance Computing)
 environment the lattice-watchFolder.py script has been created to enable live 
 processing of raw data.
 
+> Note: the below text details the movement of data into the HPC, processing it, and then out of the HPC.
+> Please refer to the branch ["one-way"](https://github.com/Characterisation-Virtual-Laboratory/Lattice-Lightsheet-preprocessing/tree/one-way)
+> for moving data into the HPC and then processing it. "One-way" is currently implemented in production. 
+
 Mounting a windows file system on Unix has a few challenges. While this can be achieved, 
 determining when Windows has finished creating a file, is difficult for Unix. This 
 script avoids the need to check file locks.
