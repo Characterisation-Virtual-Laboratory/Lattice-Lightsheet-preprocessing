@@ -78,8 +78,10 @@ class WatchFolder:
                          self.config["processing_output_folders"]['rawdata'])
             except Error as error:
                 self.logger.error("Error copying files: {}".format(error))
+                print("Error copying files: {}".format(error))
             except FileExistsError as error:
                 self.logger.error("Error copying files: {}".format(error))
+                print("Error copying files: {}".format(error))
         else:
             self.logger.info("Dry run: copying files to: {}".format(self.config["massive_output_dir"] + 'rawdata/'
                                                                     + sub_structure + "/"
@@ -120,6 +122,9 @@ class WatchFolder:
         else:
             self.logger.error(
                 "The processing file: {} does not exist. This is required to commence processing.".format(
+                    self.config["processing_file"]))
+            # Print to stdout to ease error detection for the user.
+            print("The processing file: {} does not exist. This is required to commence processing.".format(
                     self.config["processing_file"]))
 
         if processing_file_exists:
